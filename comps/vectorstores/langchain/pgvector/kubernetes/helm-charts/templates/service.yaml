@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "pgvector-db.labels" . | nindent 4 }}
+  name: {{ include "pgvector-db.fullname" . }}
+spec:
+  ports:
+    - name: "{{ .Values.service.port }}"
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+  selector:
+    {{- include "pgvector-db.selectorLabels" . | nindent 4 }}

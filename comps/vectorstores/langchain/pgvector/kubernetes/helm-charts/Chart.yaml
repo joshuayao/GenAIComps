@@ -1,0 +1,9 @@
+# Copyright (C) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v2
+name: pgvector-db
+description: The Helm chart for PGVector DB
+type: application
+version: 0.8.0
+appVersion: "0.7.0-pg16"

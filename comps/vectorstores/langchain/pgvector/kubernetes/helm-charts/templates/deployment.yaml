@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "pgvector-db.labels" . | nindent 4 }}
+  name: {{ include "pgvector-db.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pgvector-db.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "pgvector-db.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres_db }}
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: trust
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgres_passwd }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres_user }}
+          image: {{ .Values.image }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U {{ .Values.postgres_user }} -h localhost -p {{ .Values.service.port }} -d {{ .Values.postgres_db }}
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 20
+          name: {{ .Chart.Name }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d/init.sql
+              name: db-cm0
+              subPath: init.sql
+      hostname: db
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            items:
+              - key: init.sql
+                path: init.sql
+            name: db-cm0
+          name: db-cm0

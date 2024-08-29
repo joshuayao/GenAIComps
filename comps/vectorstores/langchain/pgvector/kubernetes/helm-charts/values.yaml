@@ -1,0 +1,9 @@
+replicaCount: 1
+image: pgvector/pgvector:0.7.0-pg16
+postgres_db: vectordb
+postgres_user: testuser
+postgres_passwd: testpwd
+
+service:
+  type: ClusterIP
+  port: 5432

@@ -1,0 +1,101 @@
+---
+# Source: pgvector-db/templates/configmap.yaml
+apiVersion: v1
+data:
+  init.sql: |
+    CREATE EXTENSION IF NOT EXISTS vector;
+kind: ConfigMap
+metadata:
+  annotations:
+    use-subpath: "true"
+  labels:
+    helm.sh/chart: pgvector-db-0.8.0
+    app.kubernetes.io/name: pgvector-db
+    app.kubernetes.io/instance: pgvector-db
+    app.kubernetes.io/version: "0.7.0-pg16"
+    app.kubernetes.io/managed-by: Helm
+  name: pgvector-db-config
+---
+# Source: pgvector-db/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    helm.sh/chart: pgvector-db-0.8.0
+    app.kubernetes.io/name: pgvector-db
+    app.kubernetes.io/instance: pgvector-db
+    app.kubernetes.io/version: "0.7.0-pg16"
+    app.kubernetes.io/managed-by: Helm
+  name: pgvector-db
+spec:
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
+  selector:
+    app.kubernetes.io/name: pgvector-db
+    app.kubernetes.io/instance: pgvector-db
+---
+# Source: pgvector-db/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    helm.sh/chart: pgvector-db-0.8.0
+    app.kubernetes.io/name: pgvector-db
+    app.kubernetes.io/instance: pgvector-db
+    app.kubernetes.io/version: "0.7.0-pg16"
+    app.kubernetes.io/managed-by: Helm
+  name: pgvector-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pgvector-db
+      app.kubernetes.io/instance: pgvector-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pgvector-db
+        app.kubernetes.io/instance: pgvector-db
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              value: vectordb
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: trust
+            - name: POSTGRES_PASSWORD
+              value: testpwd
+            - name: POSTGRES_USER
+              value: testuser
+          image: pgvector/pgvector:0.7.0-pg16
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U testuser -h localhost -p 5432 -d vectordb
+            failureThreshold: 3
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 20
+          name: pgvector-db
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d/init.sql
+              name: pgvector-db-config
+              subPath: init.sql
+      hostname: db
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            items:
+              - key: init.sql
+                path: init.sql
+            name: pgvector-db-config
+          name: pgvector-db-config
