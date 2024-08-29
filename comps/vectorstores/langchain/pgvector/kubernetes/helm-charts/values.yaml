@@ -1,3 +1,6 @@
+# Copyright (C) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
 replicaCount: 1
 image: pgvector/pgvector:0.7.0-pg16
 postgres_db: vectordb
